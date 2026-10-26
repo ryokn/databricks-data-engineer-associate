@@ -1,0 +1,571 @@
+{
+  "meta": {
+    "title": "Databricks Certified Data Engineer Associate 模擬問題集 Vol.1",
+    "exam": "Databricks Certified Data Engineer Associate(2026年5月4日版 / 公式ガイド 2026-08-06 更新)",
+    "passing_score": 0.7,
+    "time_limit_minutes": 80,
+    "storage_key": "databricks-dea-vol1"
+  },
+  "questions": [
+    {
+      "id": "q001",
+      "domain": "Databricks Intelligence Platform",
+      "question": "誤って実行した `DELETE` でテーブルの行が失われた。Delta テーブルを直前の正しい状態に戻すために使う方法はどれか。",
+      "options": [
+        "`VACUUM` を実行して、参照されていない古いファイルを整理する",
+        "`DESCRIBE HISTORY` で版を調べ、`RESTORE TABLE` で戻す",
+        "`OPTIMIZE` を実行して、小さなファイルを大きなファイルにまとめる",
+        "テーブルを `DROP` して、元のデータソースから再作成する"
+      ],
+      "answer": [1],
+      "explanation": "Delta Lake はトランザクションログに版を記録しているため、`DESCRIBE HISTORY` で戻したい版を特定し、`RESTORE TABLE ... TO VERSION AS OF` で巻き戻せる。`VACUUM` は参照されない古いファイルを物理削除するコマンドで、むしろタイムトラベルの範囲を狭める。`OPTIMIZE` はファイルの圧縮でデータ内容は変えない。`DROP` して再作成するのは時間がかかり、履歴と権限も失う。",
+      "note_ref": "要点メモ「1. Databricks Intelligence Platform」"
+    },
+    {
+      "id": "q002",
+      "domain": "Databricks Intelligence Platform",
+      "question": "毎晩 2:00 に実行される定期的な本番 ETL ジョブがある。実行している間だけコンピュートを使い、コストを抑えたい。最も適した構成はどれか。",
+      "options": [
+        "常時起動の all-purpose compute を共有して使う",
+        "単一ノードの開発用クラスタを終日起動しておく",
+        "ジョブ用コンピュート(job compute)を実行ごとに作成し、完了時に終了させる",
+        "常時稼働の SQL warehouse にノートブックを載せる"
+      ],
+      "answer": [2],
+      "explanation": "スケジュール実行の本番 ETL には、実行時に作成されて終了時に破棄される job compute が向く。使った時間だけの課金で、他の利用者の負荷の影響も受けにくい。all-purpose compute は対話的な開発・探索向けで、常時起動すると割高になりやすい。単一ノードの開発クラスタは本番の負荷に向かない。SQL warehouse は SQL ワークロード向けで、ノートブックのETLを載せる用途ではない。",
+      "note_ref": "要点メモ「1. Databricks Intelligence Platform」"
+    },
+    {
+      "id": "q003",
+      "domain": "Data Ingestion and Loading",
+      "question": "`COPY INTO` によるクラウドストレージからの増分ロードについて、正しい説明はどれか。",
+      "options": [
+        "ロード済みのファイルをスキップするため、再実行しても同じファイルが二重に取り込まれない",
+        "実行のたびにソースの全ファイルを再読み込みして、テーブルへ追記する",
+        "Python のストリーミング API からしか呼び出せない",
+        "ロード済みファイルの記録を持たないため、冪等性は利用者側で担保する必要がある"
+      ],
+      "answer": [0],
+      "explanation": "`COPY INTO` は SQL コマンドで、どのファイルをロードしたかを追跡する。そのため再実行しても同じファイルを二重に取り込まない(冪等)。「全ファイルを再読み込みして追記」「記録を持たない」という説明は逆。Python 専用でもなく、SQL から直接実行できる。",
+      "note_ref": "要点メモ「2. Data Ingestion and Loading」"
+    },
+    {
+      "id": "q004",
+      "domain": "Data Ingestion and Loading",
+      "question": "Auto Loader でスキーマ推論とスキーマ進化を使うために必要となるオプションはどれか。",
+      "options": [
+        "`checkpointLocation` だけを設定すれば足りる",
+        "`cloudFiles.schemaLocation` にスキーマ情報の保存先を指定する",
+        "`mergeSchema` を `false` に設定する",
+        "`cloudFiles.maxFilesPerTrigger` を設定する"
+      ],
+      "answer": [1],
+      "explanation": "`cloudFiles.schemaLocation` に保存先ディレクトリを指定すると、Auto Loader はそこへ推論したスキーマの履歴を保存し、スキーマ推論とスキーマ進化が有効になる。`checkpointLocation` はストリームの進捗を管理するための別の設定で、書き込み側に必要だがスキーマ管理は担わない。`maxFilesPerTrigger` は1回のバッチで処理する量を制御するだけ。",
+      "note_ref": "要点メモ「2. Data Ingestion and Loading」"
+    },
+    {
+      "id": "q005",
+      "domain": "Data Ingestion and Loading",
+      "question": "スキーマを指定せずに Auto Loader を使っている。新しい列が現れてもストリームを止めず、スキーマも変更せず、その列のデータを `_rescued_data` 列に残したい。`cloudFiles.schemaEvolutionMode` に何を設定するか。",
+      "options": [
+        "`failOnNewColumns`",
+        "`addNewColumns`",
+        "`rescue`",
+        "`none`"
+      ],
+      "answer": [2],
+      "explanation": "`rescue` はスキーマを変更せず、新しい列のデータを rescued data 列に記録し、ストリームも失敗しない。`addNewColumns` は新しい列を検知するとストリームを失敗させてスキーマを更新する(再起動後に新列つきで処理)。`failOnNewColumns` は新しい列で失敗し、スキーマも更新しない。`none` はスキーマ進化をせず新しい列は無視され、rescued data 列を明示的に設定しない限りデータは残らない。",
+      "note_ref": "要点メモ「2. Data Ingestion and Loading」"
+    },
+    {
+      "id": "q006",
+      "domain": "Data Ingestion and Loading",
+      "question": "スキーマを指定せず、`cloudFiles.schemaEvolutionMode` も未設定の Auto Loader ストリームに、新しい列を含むファイルが到着した。既定の動作はどれか。",
+      "options": [
+        "ストリームが失敗し、スキーマが更新される。再起動後は新しい列を含めて処理される",
+        "新しい列は何も記録されないまま破棄され、ストリームは継続する",
+        "既存のデータをすべて再処理して、新しい列を過去の行に反映する",
+        "新しい列のデータはすべて `_rescued_data` に入り、スキーマは変わらない"
+      ],
+      "answer": [0],
+      "explanation": "スキーマ未指定のときの既定は `addNewColumns`。新しい列を検知するとストリームは失敗し、`schemaLocation` のスキーマが更新されるので、再起動すると新しい列を含めて処理できる。そのため Lakeflow Jobs で自動再起動する構成が推奨される。破棄される(`none` 相当)、rescued data に入る(`rescue` 相当)のは別のモード。過去データの再処理は行われない。",
+      "note_ref": "要点メモ「2. Data Ingestion and Loading」"
+    },
+    {
+      "id": "q007",
+      "domain": "Data Ingestion and Loading",
+      "question": "Salesforce 上の顧客データを、コードをほとんど書かずに、設定ベースで Unity Catalog の Delta テーブルへ継続的に取り込みたい。最も適した方法はどれか。",
+      "options": [
+        "Salesforce のエクスポートを S3 に出力し、Auto Loader で読み込む自作パイプラインを組む",
+        "`COPY INTO` を毎時実行して Salesforce から直接ロードする",
+        "Lakeflow Connect のマネージドコネクタ(Salesforce)を設定して取り込む",
+        "JDBC を使うノートブックを作り、手動で実行する"
+      ],
+      "answer": [2],
+      "explanation": "SaaS やデータベースからの取り込みを設定ベースで行うのが Lakeflow Connect のマネージドコネクタ。UC 管理のテーブルにそのまま取り込める。Auto Loader 方式は動くがエクスポートの仕組みを自作する必要があり要件に合わない。`COPY INTO` はクラウドストレージ上のファイルを対象にするため、Salesforce から直接はロードできない。手動実行の JDBC ノートブックは継続取り込みにならない。",
+      "note_ref": "要点メモ「2. Data Ingestion and Loading」"
+    },
+    {
+      "id": "q008",
+      "domain": "Data Ingestion and Loading",
+      "question": "クラウドストレージに新しいファイルが継続的に到着する。到着から短い遅延で、処理済みファイルを重複なく増分処理し、ファイル数が増えても拡張できる取り込み方法はどれか。",
+      "options": [
+        "`spark.read` で毎回全ファイルを読み込み、テーブルを上書きする",
+        "毎晩 `COPY INTO` を1回実行する",
+        "ファイル一覧を手作業で確認し、新しいものだけをロードする",
+        "Auto Loader(`cloudFiles`)のストリームで取り込む"
+      ],
+      "answer": [3],
+      "explanation": "Auto Loader は新着ファイルを検知して増分処理し、チェックポイントで処理済みを管理するため、継続的な到着と大量ファイルに向く。毎回全読み込みして上書きするのは非効率で、手作業は運用できない。`COPY INTO` も増分ロードできるが、毎晩1回の実行では「短い遅延」の要件を満たさない。",
+      "note_ref": "要点メモ「2. Data Ingestion and Loading」"
+    },
+    {
+      "id": "q009",
+      "domain": "Data Ingestion and Loading",
+      "question": "Auto Loader で取り込むジョブを Lakeflow Jobs で1日1回起動する。起動時に溜まっている新着ファイルをすべて処理し、完了したらストリームを終了させたい。書き込み側にどの設定を使うか。",
+      "options": [
+        "`outputMode('complete')` を指定する",
+        "`trigger(availableNow=True)` を指定する",
+        "`cloudFiles.format` を `batch` にする",
+        "`awaitTermination()` を呼ばずに放置する"
+      ],
+      "answer": [1],
+      "explanation": "`trigger(availableNow=True)` は、その時点で利用可能なデータをすべて処理してから終了する。スケジュール実行と相性がよく、増分処理の利点も保てる。`outputMode('complete')` は集計結果の出力モードの話で終了条件ではない。`cloudFiles.format` はソースのファイル形式(json、csv など)を指定するオプション。放置してもストリームは自動終了しない。",
+      "note_ref": "要点メモ「2. Data Ingestion and Loading」"
+    },
+    {
+      "id": "q010",
+      "domain": "Data Ingestion and Loading",
+      "question": "Auto Loader がスキーマを推論するとき、自動でスキーマに追加され、パースできなかったデータや未知の列のデータを保持する列はどれか。",
+      "options": [
+        "`_metadata`",
+        "`_corrupt_record`",
+        "`_rescued_data`",
+        "`_change_type`"
+      ],
+      "answer": [2],
+      "explanation": "Auto Loader はスキーマ推論時に `_rescued_data` 列を自動で追加し、スキーマに合わないデータを失わないよう保持する。`_metadata` はファイル名などのファイルメタデータ列。`_corrupt_record` は Spark の PERMISSIVE モードで壊れたレコードを入れる列で、Auto Loader の rescue の仕組みとは別。`_change_type` は Change Data Feed の列。",
+      "note_ref": "要点メモ「2. Data Ingestion and Loading」"
+    },
+    {
+      "id": "q011",
+      "domain": "Data Ingestion and Loading",
+      "question": "外部の REST API から JSON を毎日取得し、Unity Catalog の Delta テーブルに保存したい。ストレージ上にファイルは存在しない。適切な構成はどれか。",
+      "options": [
+        "Python ノートブックで API を呼び、結果を UC の Delta テーブルへ書き込み、Jobs で定期実行する",
+        "Auto Loader のソースに REST API の URL を直接指定して、ストリームとして読み込む",
+        "`COPY INTO` の `FROM` に REST API の URL を指定して、増分ロードする",
+        "SQL warehouse のダッシュボードに REST API の URL を登録して、定期的に更新する"
+      ],
+      "answer": [0],
+      "explanation": "REST クライアントをノートブックで使ってデータを取得し、UC のテーブルやクラウドストレージに書き込み、Lakeflow Jobs で定期実行するのが標準的な構成。Auto Loader と `COPY INTO` はクラウドストレージ上のファイルを入力にするので、API の URL は直接読めない。ダッシュボードは表示用でデータ取り込みの仕組みではない。",
+      "note_ref": "要点メモ「2. Data Ingestion and Loading」"
+    },
+    {
+      "id": "q012",
+      "domain": "Data Transformation and Modeling",
+      "question": "`df1.union(df2)` の説明として正しいものはどれか。(`df1` と `df2` は同じ列数の DataFrame)",
+      "options": [
+        "列名で対応づけて結合し、重複行は除去する",
+        "列名で対応づけて結合し、重複行は残す",
+        "列の位置で対応づけて結合し、重複行は除去する",
+        "列の位置で対応づけて結合し、重複行は残す"
+      ],
+      "answer": [3],
+      "explanation": "DataFrame の `union()` は列の「位置」で対応づけ、重複を除去しない(SQL の `UNION ALL` と同じ)。列名で合わせたいときは `unionByName()`、重複を除きたいときは別途 `distinct()` / `dropDuplicates()` を使う。SQL の `UNION` は重複除去、`UNION ALL` は重複保持なので混同しないこと。",
+      "note_ref": "要点メモ「3. Data Transformation and Modeling」"
+    },
+    {
+      "id": "q013",
+      "domain": "Data Transformation and Modeling",
+      "question": "2つの DataFrame は同じ列を持つが、列の並び順が異なる。列名で対応づけて結合したい。どれを使うか。",
+      "options": [
+        "`df1.union(df2)`",
+        "`df1.unionByName(df2)`",
+        "`df1.crossJoin(df2)`",
+        "`df1.join(df2, how='anti')`"
+      ],
+      "answer": [1],
+      "explanation": "`unionByName()` は列名で対応づけて結合する。`union()` は位置で結合するため、並び順が違うと別の列同士が結合されてしまう。`crossJoin` は直積、`anti` 結合は右側に一致しない左側の行を取り出す操作で、縦方向に積む結合ではない。",
+      "note_ref": "要点メモ「3. Data Transformation and Modeling」"
+    },
+    {
+      "id": "q014",
+      "domain": "Data Transformation and Modeling",
+      "question": "数十億行の `fact_sales` と数千行の `dim_store` を `store_id` で結合する。大きい側の shuffle を避けるにはどうするか。",
+      "options": [
+        "`fact_sales.join(broadcast(dim_store), 'store_id')` とする",
+        "`fact_sales` 側を `broadcast()` で配布する",
+        "`spark.sql.shuffle.partitions` を 1 にする",
+        "`crossJoin` で結合してから `filter` する"
+      ],
+      "answer": [0],
+      "explanation": "ブロードキャスト結合は、小さい側(`dim_store`)を全エグゼキュータへ配布し、大きい側を shuffle せずに結合する。大きい側を配布することはできない。`shuffle.partitions` を1にすると並列度が失われて遅くなる。`crossJoin` は直積で、行数が爆発する。",
+      "note_ref": "要点メモ「3. Data Transformation and Modeling」"
+    },
+    {
+      "id": "q015",
+      "domain": "Data Transformation and Modeling",
+      "question": "`orders` テーブルに配列型の `items` 列がある。配列の要素を1つずつ別の行に展開して、注文明細の行を作りたい。どれを使うか。",
+      "options": [
+        "`F.collect_list('items')`",
+        "`F.flatten('items')`",
+        "`F.explode('items')`",
+        "`F.split('items', ',')`"
+      ],
+      "answer": [2],
+      "explanation": "`explode()` は配列の各要素を1行ずつに展開する。`collect_list()` は逆に複数行を配列へ集約する関数。`flatten()` は入れ子の配列を1段平らにするだけで行は増えない。`split()` は文字列を区切って配列にする関数で、すでに配列の列には使わない。",
+      "note_ref": "要点メモ「3. Data Transformation and Modeling」"
+    },
+    {
+      "id": "q016",
+      "domain": "Data Transformation and Modeling",
+      "question": "`events` テーブルに同じ `event_id` を持つ行が複数ある。`ingested_at` など他の列は行ごとに異なる。`event_id` ごとに1行へ絞って Silver テーブルに書きたい。どれを使うか。",
+      "options": [
+        "`df.distinct()` で全体の重複を取り除く",
+        "`df.dropna()` で null を含む行を取り除く",
+        "`df.coalesce(1)` で1つのパーティションにまとめる",
+        "`df.dropDuplicates(['event_id'])` で `event_id` の重複を除く"
+      ],
+      "answer": [3],
+      "explanation": "`dropDuplicates(['event_id'])` は指定した列の値が重複する行を1行に絞る。`distinct()` はすべての列が一致する行しか除去しないので、`ingested_at` が違えば残る。`dropna()` は null を含む行の処理、`coalesce(1)` はパーティション数の変更で、重複排除とは関係ない。",
+      "note_ref": "要点メモ「3. Data Transformation and Modeling」"
+    },
+    {
+      "id": "q017",
+      "domain": "Data Transformation and Modeling",
+      "question": "数十億行のイベントから、ユニークユーザー数を「おおよそ」で良いので高速に求めたい。どれを使うか。",
+      "options": [
+        "`F.countDistinct('user_id')`",
+        "`F.approx_count_distinct('user_id')`",
+        "`F.collect_set('user_id')` で集めてから件数を数える",
+        "`df.count()`"
+      ],
+      "answer": [1],
+      "explanation": "`approx_count_distinct` は HyperLogLog 系の近似アルゴリズムで、厳密な値より速く、メモリも少なくて済む。`countDistinct` は厳密だがコストが大きい。`collect_set` で全値をドライバー側に集めるのは大規模データで危険。`count()` は行数であって、ユニークユーザー数ではない。",
+      "note_ref": "要点メモ「3. Data Transformation and Modeling」"
+    },
+    {
+      "id": "q018",
+      "domain": "Data Transformation and Modeling",
+      "question": "BI ダッシュボード向けの Gold 集計を作る。クエリのたびに集計し直さず、結果を事前計算して保持し、可能な場合は差分だけを更新させたい。どれを使うか。",
+      "options": [
+        "通常のビュー(`CREATE VIEW`)",
+        "一時ビュー(`CREATE TEMPORARY VIEW`)",
+        "マテリアライズドビュー(materialized view)",
+        "クエリのたびに `df.cache()` を呼ぶ"
+      ],
+      "answer": [2],
+      "explanation": "マテリアライズドビューは結果を事前計算して保存し、可能なら増分で更新する。BI の応答を速くしたい Gold 層に向く。通常のビューはクエリのたびに計算し直し、データを保存しない。一時ビューはセッション内でのみ有効。`cache()` はセッション内のメモリキャッシュで、永続的な事前計算ではない。",
+      "note_ref": "要点メモ「3. Data Transformation and Modeling」"
+    },
+    {
+      "id": "q019",
+      "domain": "Data Transformation and Modeling",
+      "question": "Lakeflow Spark Declarative Pipelines で、`amount` が負のレコードは破棄しつつ、パイプラインは止めずに処理を続けたい。どれを使うか。",
+      "options": [
+        "`expect_or_drop`",
+        "`expect_or_fail`",
+        "`expect`",
+        "`expect_all`"
+      ],
+      "answer": [0],
+      "explanation": "`expect_or_drop` は違反レコードを破棄して処理を続行する。`expect_or_fail` は違反があると更新を失敗させる。`expect` と `expect_all`(複数の expect をまとめる形)は違反レコードを残したまま、件数をメトリクスに記録するだけ。",
+      "note_ref": "要点メモ「3. Data Transformation and Modeling」"
+    },
+    {
+      "id": "q020",
+      "domain": "Data Transformation and Modeling",
+      "question": "`spark.sql.autoBroadcastJoinThreshold` の役割として正しいものはどれか。",
+      "options": [
+        "結合後のパーティション数を決める",
+        "エグゼキュータに割り当てるメモリ量を決める",
+        "RDD 操作の既定の並列度を決める",
+        "結合時にテーブルを自動でブロードキャストする大きさの上限を決める"
+      ],
+      "answer": [3],
+      "explanation": "この値以下のサイズのテーブルは、結合時に自動でブロードキャストされる。パーティション数は `spark.sql.shuffle.partitions`、RDD の既定並列度は `spark.default.parallelism`、メモリは `spark.executor.memory` / `spark.driver.memory` が担当する。設定を変えたら必ず性能を再計測する。",
+      "note_ref": "要点メモ「3. Data Transformation and Modeling」"
+    },
+    {
+      "id": "q021",
+      "domain": "Working with Lakeflow Jobs",
+      "question": "ネットワークの一時的な障害で、特定のタスクがときどき失敗するが、再実行すれば成功する。ジョブ全体を手動で再実行せずに回復させたい。どうするか。",
+      "options": [
+        "ジョブを継続トリガーに変更する",
+        "そのタスクにリトライ回数と間隔を設定する",
+        "クラスタのサイズを大きくする",
+        "タスクの依存関係を削除する"
+      ],
+      "answer": [1],
+      "explanation": "一時的な失敗には、タスク単位のリトライ設定(回数と間隔)で自動回復させるのが基本。継続トリガーは起動条件を変えるだけで失敗の回復にはならない。クラスタを大きくしても一時的なネットワーク障害は解消しない。依存関係を消すと実行順序が崩れる。",
+      "note_ref": "要点メモ「4. Working with Lakeflow Jobs」"
+    },
+    {
+      "id": "q022",
+      "domain": "Working with Lakeflow Jobs",
+      "question": "上流タスクが返した値(例: 処理件数)に応じて、後続のタスクを実行するかどうかを切り替えたい。使う機能はどれか。",
+      "options": [
+        "For each タスク",
+        "ジョブのスケジュール(cron)",
+        "クラスタポリシー",
+        "If/else 条件タスク"
+      ],
+      "answer": [3],
+      "explanation": "If/else 条件タスクは、値の比較結果で後続タスクの経路を分岐させる。For each は同じ処理を複数の入力で繰り返す機能で分岐ではない。スケジュールは起動時刻の設定、クラスタポリシーはコンピュート設定の制約で、タスクの分岐とは無関係。",
+      "note_ref": "要点メモ「4. Working with Lakeflow Jobs」"
+    },
+    {
+      "id": "q023",
+      "domain": "Working with Lakeflow Jobs",
+      "question": "顧客IDのリストの各要素に対して、同じノートブックをパラメータ違いで繰り返し実行したい。使う機能はどれか。",
+      "options": [
+        "For each タスク",
+        "If/else 条件タスク",
+        "テーブル更新トリガー",
+        "タスクのリトライ"
+      ],
+      "answer": [0],
+      "explanation": "For each タスクは、入力のリストの各要素について内側のタスクを繰り返し実行する(ループ)。If/else は分岐、テーブル更新トリガーはジョブの起動条件、リトライは失敗時の再実行で、いずれもループではない。",
+      "note_ref": "要点メモ「4. Working with Lakeflow Jobs」"
+    },
+    {
+      "id": "q024",
+      "domain": "Working with Lakeflow Jobs",
+      "question": "別チームが管理する Unity Catalog のテーブルが更新されたら、そのテーブルを入力とする下流ジョブを自動で実行したい。適したトリガーはどれか。",
+      "options": [
+        "5分ごとのスケジュールトリガー",
+        "継続トリガー",
+        "テーブル更新トリガー",
+        "ファイル到着トリガー"
+      ],
+      "answer": [2],
+      "explanation": "テーブル更新トリガーは、指定した UC のテーブルが更新されたときにジョブを起動する。上流に手を入れずに購読できるため、複数の下流ジョブへの展開も容易。5分ごとのスケジュールは更新がなくても実行して無駄が出る。継続トリガーは常時稼働でコストが増える。ファイル到着トリガーは外部ロケーション/ボリュームのファイルを監視するもので、テーブルの更新は監視しない。",
+      "note_ref": "要点メモ「4. Working with Lakeflow Jobs」"
+    },
+    {
+      "id": "q025",
+      "domain": "Working with Lakeflow Jobs",
+      "question": "ファイル到着トリガーのジョブで、短時間にファイルが何十個も連続して到着する。到着が落ち着いてから、まとめて1回だけ処理したい。どの設定が適しているか。",
+      "options": [
+        "Minimum time between triggers",
+        "Wait after last change",
+        "継続トリガーへの切り替え",
+        "タスクのタイムアウト"
+      ],
+      "answer": [1],
+      "explanation": "Wait after last change は最後の変更から指定した時間待ってから起動する設定で、連続到着が落ち着くのを待てる(デバウンス)。Minimum time between triggers は前回の実行が終わってから次の起動までに空ける最短の時間(クールダウン)で、到着が止まるのを待つ設定ではない。継続トリガーは別の起動方式、タイムアウトは実行時間の上限であり、どちらも要件に合わない。",
+      "note_ref": "要点メモ「4. Working with Lakeflow Jobs」"
+    },
+    {
+      "id": "q026",
+      "domain": "Working with Lakeflow Jobs",
+      "question": "上流の一部タスクが失敗しても、成功・失敗にかかわらず最後に必ず後片付けタスクを実行したい。後続タスクの実行条件(Run if)はどれにするか。",
+      "options": [
+        "All succeeded",
+        "At least one succeeded",
+        "None failed",
+        "All done"
+      ],
+      "answer": [3],
+      "explanation": "All done は、上流のタスクがすべて完了(成功・失敗・スキップを問わず)していれば実行する。All succeeded は全部成功、None failed は1つも失敗していない場合のみ、At least one succeeded は少なくとも1つ成功した場合で、いずれも上流が失敗すると実行されないことがある。",
+      "note_ref": "要点メモ「4. Working with Lakeflow Jobs」"
+    },
+    {
+      "id": "q027",
+      "domain": "Implementing CI/CD",
+      "question": "Databricks のワークスペース UI から Git フォルダー(旧 Repos)を使ってできることとして正しいものはどれか。",
+      "options": [
+        "ブランチの作成はローカル環境でのみ行える",
+        "ノートブックのリビジョン履歴だけで、ブランチ運用を代替できる",
+        "ブランチの作成と切り替え、コミット、プッシュを UI から行える",
+        "Git プロバイダーを使わずに、Databricks だけでプルリクエストを管理できる"
+      ],
+      "answer": [2],
+      "explanation": "Git フォルダーでは、ワークスペース UI からブランチの作成・切り替え、コミット、プッシュ、プルリクエストの作成まで行える。リビジョン履歴は Git のブランチやレビューの代わりにならない。プルリクエストは Git プロバイダー側の機能であり、Databricks 単体で管理するものではない。",
+      "note_ref": "要点メモ「5. Implementing CI/CD」"
+    },
+    {
+      "id": "q028",
+      "domain": "Implementing CI/CD",
+      "question": "同じコードベースを dev と prod にデプロイする。環境ごとに使う catalog 名だけを変えたい。Declarative Automation Bundles での適切な方法はどれか。",
+      "options": [
+        "変数(`variables`)を定義し、ターゲットごとに値を上書きする",
+        "dev と prod でバンドルのコードを別リポジトリにコピーして管理する",
+        "ノートブック内に環境名の if 文を直書きして分岐する",
+        "デプロイ後に、ジョブの設定を UI から手作業で書き換える"
+      ],
+      "answer": [0],
+      "explanation": "バンドルでは `variables` で値を共通化し、`targets` ごとに上書きすることで、同じコードを環境別の設定でデプロイできる。コードをコピーすると二重管理になる。ノートブックへの直書きや UI の手作業変更は再現性・保守性が低く、CI/CD の目的に反する。",
+      "note_ref": "要点メモ「5. Implementing CI/CD」"
+    },
+    {
+      "id": "q029",
+      "domain": "Implementing CI/CD",
+      "question": "`databricks.yml` を編集した。デプロイする前に、バンドルの設定が正しいか検証したい。実行するコマンドはどれか。",
+      "options": [
+        "`databricks bundle run`",
+        "`databricks bundle validate`",
+        "`databricks bundle destroy`",
+        "`databricks bundle deploy`"
+      ],
+      "answer": [1],
+      "explanation": "`databricks bundle validate` はバンドルの設定を検証する。`deploy` はデプロイ、`run` はデプロイ済みのジョブやパイプラインの実行、`destroy` はデプロイしたリソースの削除。典型的な流れは validate → deploy → run。",
+      "note_ref": "要点メモ「5. Implementing CI/CD」"
+    },
+    {
+      "id": "q030",
+      "domain": "Implementing CI/CD",
+      "question": "`databricks bundle deploy -t prod` の意味として正しいものはどれか。",
+      "options": [
+        "ローカルのノートブックを prod クラスタで1回だけ実行する",
+        "バンドル内のすべてのターゲットを同時にデプロイする",
+        "prod ターゲットのリソースをすべて削除する",
+        "prod ターゲットの定義に基づいて、バンドルのリソースを対象ワークスペースへデプロイする"
+      ],
+      "answer": [3],
+      "explanation": "`-t`(`--target`)で指定したターゲットの設定(ワークスペース、変数の上書きなど)に従って、ジョブやパイプラインなどのバンドルのリソースをデプロイする。実行は `bundle run`、削除は `bundle destroy`。デプロイは指定したターゲットに対してのみ行われ、すべてのターゲットではない。",
+      "note_ref": "要点メモ「5. Implementing CI/CD」"
+    },
+    {
+      "id": "q031",
+      "domain": "Troubleshooting, Monitoring, and Optimization",
+      "question": "夜間バッチジョブの実行時間が、最近徐々に長くなっていないかを確認したい。最初に見るべきものはどれか。",
+      "options": [
+        "クラスタの Spark UI のストレージタブだけ",
+        "ジョブのタスクグラフだけ",
+        "ジョブの実行履歴(run history)で、過去の実行時間と比較する",
+        "Unity Catalog のリネージ"
+      ],
+      "answer": [2],
+      "explanation": "実行時間の傾向を見るには、Lakeflow Jobs の実行履歴で現在の実行時間を過去のベースラインと比べる。タスクグラフは実行ごとの依存関係とどこで止まっているかを見るのに向き、時系列の比較には向かない。Spark UI のストレージタブはキャッシュの状況、リネージはデータの系譜を示すもので、実行時間の傾向とは別。",
+      "note_ref": "要点メモ「6. Troubleshooting, Monitoring, and Optimization」"
+    },
+    {
+      "id": "q032",
+      "domain": "Troubleshooting, Monitoring, and Optimization",
+      "question": "ソートマージ結合を含むバッチジョブで、結合キーに偏りがあり、ステージ内の1つのタスクだけが極端に大きな入力を処理して遅い。AQE が無効になっている。最小の変更で改善する方法はどれか。",
+      "options": [
+        "AQE を有効にし、スキュー結合の最適化を使う",
+        "`spark.sql.shuffle.partitions` を 1 にする",
+        "ドライバーのメモリだけを増やす",
+        "結合前に両方のテーブルを `cache()` する"
+      ],
+      "answer": [0],
+      "explanation": "結合キーの偏りによるスキューには、AQE のスキュー結合の最適化が有効で、実行時に大きなパーティションを分割してくれる。`shuffle.partitions` を1にすると並列度が失われ、さらに悪化する。ドライバーのメモリは executor 側の偏りと関係がない。`cache()` は偏りそのものを解消しない。",
+      "note_ref": "要点メモ「6. Troubleshooting, Monitoring, and Optimization」"
+    },
+    {
+      "id": "q033",
+      "domain": "Troubleshooting, Monitoring, and Optimization",
+      "question": "フィルタに使う列が時期によって変わるテーブルがある。パーティション設計をやり直さずに、データのレイアウトを柔軟に最適化したい。適した機能はどれか。",
+      "options": [
+        "`ZORDER BY` を毎回すべてのパーティションに適用する",
+        "Liquid Clustering(`CLUSTER BY`)",
+        "列ごとに別々のテーブルへ分割する",
+        "`VACUUM` の保持期間を短くする"
+      ],
+      "answer": [1],
+      "explanation": "Liquid Clustering は `CLUSTER BY` でレイアウトを管理し、従来のパーティショニングと `ZORDER` の代替になる。クラスタリングキーを後から変更でき、`OPTIMIZE` で増分的に反映される。`ZORDER` は固定的で、同じテーブルで Liquid Clustering と併用しない。テーブルの分割は管理が複雑になる。`VACUUM` は不要ファイルの削除で、レイアウトの最適化ではない。",
+      "note_ref": "要点メモ「6. Troubleshooting, Monitoring, and Optimization」"
+    },
+    {
+      "id": "q034",
+      "domain": "Troubleshooting, Monitoring, and Optimization",
+      "question": "Spark UI で、あるステージのタスクに大量の Spill (Disk) が表示されている。最も可能性が高い原因はどれか。",
+      "options": [
+        "入力ファイルが小さすぎてタスクが少ない",
+        "ジョブのスケジュール設定が誤っている",
+        "Unity Catalog の権限が不足している",
+        "1つのタスクが扱うデータがメモリに収まりきらない"
+      ],
+      "answer": [3],
+      "explanation": "Spill は、タスクが処理するデータがメモリに収まらず、ディスクへ退避している状態。パーティションが大きすぎる、またはスキューがあるときに起きやすい。対処はパーティション数の見直し、メモリの大きいノード、スキューの解消。スケジュールや権限の問題は Spill の原因にならない。",
+      "note_ref": "要点メモ「6. Troubleshooting, Monitoring, and Optimization」"
+    },
+    {
+      "id": "q035",
+      "domain": "Governance and Security",
+      "question": "Unity Catalog の外部テーブルを `DROP TABLE` した。起こることとして正しいものはどれか。",
+      "options": [
+        "ストレージ上のデータファイルも直ちに削除される",
+        "UC のメタデータは削除されるが、外部ロケーションのデータファイルは残る",
+        "テーブルは自動的に管理テーブルへ変換される",
+        "権限だけが削除され、テーブル定義は残る"
+      ],
+      "answer": [1],
+      "explanation": "外部テーブルは、データの置き場を利用者が管理する。`DROP` で削除されるのは UC 上のメタデータだけで、データファイルは外部ロケーションに残る。一方、管理テーブルは `DROP` でデータも削除の対象になる。管理テーブルへの自動変換や、権限だけの削除は起こらない。",
+      "note_ref": "要点メモ「7. Governance and Security」"
+    },
+    {
+      "id": "q036",
+      "domain": "Governance and Security",
+      "question": "`analysts` グループに、`prod.sales.orders` テーブルの読み取りだけを許可したい。最小権限として適切な付与はどれか。",
+      "options": [
+        "catalog に `USE CATALOG`、schema に `USE SCHEMA`、table に `SELECT` を付与する",
+        "`prod.sales.orders` に `SELECT` だけを付与する",
+        "`prod` カタログに `ALL PRIVILEGES` をまとめて付与する",
+        "`prod.sales.orders` に `MODIFY` を付与する"
+      ],
+      "answer": [0],
+      "explanation": "Unity Catalog ではオブジェクトの階層に沿って権限を付与する。テーブルを読むには、上位の catalog に `USE CATALOG`、schema に `USE SCHEMA`、テーブルに `SELECT` が必要。`SELECT` だけでは上位の権限が足りず読めない。`ALL PRIVILEGES` は過剰、`MODIFY` は書き込み系の権限で読み取り専用の要件に反する。",
+      "note_ref": "要点メモ「7. Governance and Security」"
+    },
+    {
+      "id": "q037",
+      "domain": "Governance and Security",
+      "question": "営業担当者が、自分の担当リージョンの行だけを `orders` テーブルから参照できるようにしたい。テーブルを複製したくない。使う機能はどれか。",
+      "options": [
+        "リージョンごとに別テーブルを作り、手作業で同期する",
+        "列マスク(column mask)",
+        "行フィルター(row filter)",
+        "Delta のタイムトラベル"
+      ],
+      "answer": [2],
+      "explanation": "行フィルターは、ユーザーやグループに応じて見える行を絞る。テーブルを複製せずに、1つのテーブルから実行ユーザーごとに異なる行を返せる。列マスクは行ではなく列の値を隠す機能。別テーブルを手作業で同期するのは運用負荷が高く、データの不整合も起きる。タイムトラベルは過去の版を参照する機能で、アクセス制御ではない。",
+      "note_ref": "要点メモ「7. Governance and Security」"
+    },
+    {
+      "id": "q038",
+      "domain": "Governance and Security",
+      "question": "`email` 列を `support` グループのメンバーにだけそのまま見せ、それ以外のユーザーには `***` とマスクして返したい。実装方法はどれか。",
+      "options": [
+        "グループごとにテーブルを複製し、片方の `email` を `***` にしておく",
+        "`email` 列に DENY を設定して、`support` 以外のアクセスを制限する",
+        "`email` 列を削除して、別のテーブルに退避して管理する",
+        "マスク関数を列に設定し、`is_account_group_member('support')` で分岐する"
+      ],
+      "answer": [3],
+      "explanation": "列マスクは、列にマスク関数を設定し、関数の中でグループのメンバーシップによって返す値を切り替える。1つのテーブルから、ユーザーごとに元の値かマスクした値を返せる。テーブルの複製は二重管理になる。DENY はアクセスを拒否するもので、`***` を返す要件は満たせない。列の削除・退避は、見せたい人にも見えなくなる。",
+      "note_ref": "要点メモ「7. Governance and Security」"
+    },
+    {
+      "id": "q039",
+      "domain": "Governance and Security",
+      "question": "個人情報(PII)を含む列が複数のテーブルにある。同じマスクルールを一括で適用し、列ごとの設定の手間を減らして、中央で管理したい。適した方法はどれか。",
+      "options": [
+        "テーブルごとに列マスクを手動で設定する",
+        "ガバナンスタグを PII 列に付与し、ABAC の列マスクポリシーで一括適用する",
+        "全ユーザーの `SELECT` 権限を取り消す",
+        "PII 列のあるテーブルをすべて外部テーブルへ変換する"
+      ],
+      "answer": [1],
+      "explanation": "ABAC はガバナンスタグが付いた対象に、catalog / schema / table の階層で定義したポリシー(行フィルターまたは列マスク)を一括適用し、クエリ時に動的に評価する。多数のテーブルをまたぐ統一ルールの中央管理に向く。テーブルごとの手動設定は分散して漏れやすい。`SELECT` の全取り消しは誰も読めなくなる。外部テーブルへの変換は、マスクとは無関係。",
+      "note_ref": "要点メモ「7. Governance and Security」"
+    },
+    {
+      "id": "q040",
+      "domain": "Governance and Security",
+      "question": "Unity Catalog の外部テーブルを管理テーブルへ変換したい。使うコマンドはどれか。",
+      "options": [
+        "`CONVERT TO DELTA`",
+        "`ALTER TABLE ... UNSET MANAGED`",
+        "`ALTER TABLE ... SET MANAGED`",
+        "`OPTIMIZE`"
+      ],
+      "answer": [2],
+      "explanation": "外部テーブルから管理テーブルへの変換は `ALTER TABLE ... SET MANAGED`。`UNSET MANAGED` は、その変換を取り消して外部テーブルに戻すためのコマンド(変換後の限られた期間のみ)。`CONVERT TO DELTA` は Parquet などのテーブルを Delta に変換するコマンドで、外部・管理の区別とは別。`OPTIMIZE` はファイルの圧縮。",
+      "note_ref": "要点メモ「7. Governance and Security」"
+    }
+  ]
+}
