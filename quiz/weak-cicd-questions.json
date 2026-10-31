@@ -1,0 +1,171 @@
+{
+  "meta": {
+    "title": "弱点対策: Implementing CI/CD(10問)",
+    "exam": "Databricks Certified Data Engineer Associate(弱点分野の練習)",
+    "passing_score": 0.7,
+    "time_limit_minutes": 15,
+    "storage_key": "dea-weak-cicd"
+  },
+  "questions": [
+    {
+      "id": "b001",
+      "domain": "Implementing CI/CD",
+      "question": "Declarative Automation Bundles のプロジェクトで、リソースと環境(ターゲット)を定義する中心の設定ファイルの名前はどれか。",
+      "options": [
+        "bundle.json",
+        "databricks.yml",
+        "dab_config.toml",
+        "pyproject.toml"
+      ],
+      "answer": [
+        1
+      ],
+      "explanation": "バンドルの中心となる設定ファイルは `databricks.yml`。ジョブやパイプラインなどのリソース、`targets`(dev や prod など)を定義する。`bundle.json` や `dab_config.toml` という名前の標準ファイルはない。`pyproject.toml` は Python プロジェクトの設定で、バンドルの設定ファイルではない。",
+      "note_ref": "要点メモ「Implementing CI/CD」"
+    },
+    {
+      "id": "b002",
+      "domain": "Implementing CI/CD",
+      "question": "デプロイ前に、`databricks.yml` の構文やリソース定義の整合性を確認したい。使うコマンドはどれか。",
+      "options": [
+        "databricks bundle lint",
+        "databricks bundle test",
+        "databricks bundle validate",
+        "databricks bundle compile"
+      ],
+      "answer": [
+        2
+      ],
+      "explanation": "`databricks bundle validate` は、設定の構文と整合性を確認する。ワークスペースのリソースは変更しない。CI で本番デプロイの前に実行すると、設定の誤りを早く見つけられる。`lint`、`test`、`compile` は、この用途の標準的なサブコマンドではない。",
+      "note_ref": "要点メモ「Implementing CI/CD」"
+    },
+    {
+      "id": "b003",
+      "domain": "Implementing CI/CD",
+      "question": "`databricks.yml` の `targets` に dev と prod を定義している。本番ワークスペースへデプロイするコマンドはどれか。",
+      "options": [
+        "databricks bundle deploy -t prod",
+        "databricks bundle deploy -p prod",
+        "databricks bundle deploy --stage prod",
+        "databricks bundle deploy -e prod"
+      ],
+      "answer": [
+        0
+      ],
+      "explanation": "`-t`(`--target`)でターゲットを指定すると、そのターゲットの設定でデプロイされる。`-p` は CLI の認証プロファイルを指定するオプションで、ターゲットは選ばない。`--stage` や `-e` は、この用途のオプションではない。",
+      "note_ref": "要点メモ「Implementing CI/CD」"
+    },
+    {
+      "id": "b004",
+      "domain": "Implementing CI/CD",
+      "question": "開発者ごとに同じジョブを別々に試せるようにしたい。`targets` に `mode: development` を指定すると、どうなるか。",
+      "options": [
+        "ターゲットを使わず、ワークスペースの共有設定だけでデプロイされる",
+        "本番と同じ名前で既存のリソースを上書きし、設定をそのまま引き継ぐ",
+        "デプロイ時に、対象ワークスペースの既存データがすべて削除される",
+        "リソース名に開発者の接頭辞が付き、スケジュールは既定で一時停止される"
+      ],
+      "answer": [
+        3
+      ],
+      "explanation": "development モードでは、リソース名に開発者ごとの接頭辞が付き、他の人の本番リソースと衝突しない。スケジュールも既定で一時停止されるため、開発中のジョブが誤って本番のように動くことを防げる。本番と同じ名前で上書きしたり、データを削除したりはしない。",
+      "note_ref": "要点メモ「Implementing CI/CD」"
+    },
+    {
+      "id": "b005",
+      "domain": "Implementing CI/CD",
+      "question": "CI/CD で本番にデプロイする。デプロイ時の認証に使う主体として推奨されるものはどれか。",
+      "options": [
+        "サービスプリンシパルを使い、必要な権限だけを与える",
+        "管理者の個人アクセストークンを、チームで共有する",
+        "ワークスペースのパスワードを CI の設定に平文で書く",
+        "認証なしで実行できるように設定する"
+      ],
+      "answer": [
+        0
+      ],
+      "explanation": "サービスプリンシパルは人ではなく、自動処理のための ID。必要最小限の権限だけを与えられ、個人の退職や異動の影響を受けない。個人トークンの共有や平文のパスワードは、漏えいと監査の問題を招く。認証なしでの実行は論外。",
+      "note_ref": "要点メモ「Implementing CI/CD」"
+    },
+    {
+      "id": "b006",
+      "domain": "Implementing CI/CD",
+      "question": "CI の設定から Databricks に接続するためのトークンを、安全に扱いたい。最も適した方法はどれか。",
+      "options": [
+        "リポジトリのコードにトークンを直接書き、プライベートリポジトリにする",
+        "CI サービスの秘密情報(Secrets)機能に保存し、環境変数として参照する",
+        "トークンを README に書いて、チームで共有する",
+        "トークンをビルドのログに出力して、後から確認できるようにする"
+      ],
+      "answer": [
+        1
+      ],
+      "explanation": "CI サービスの秘密情報機能に保存し、実行時に環境変数として参照すると、リポジトリに値が残らない。リポジトリに直接書くと、Git の履歴から漏えいするおそれがある。README やログに出すのも漏えいの原因になる。",
+      "note_ref": "要点メモ「Implementing CI/CD」"
+    },
+    {
+      "id": "b007",
+      "domain": "Implementing CI/CD",
+      "question": "バンドルの CI/CD の流れとして適切なものはどれか。",
+      "options": [
+        "本番ワークスペースで直接編集し、後からコードに書き戻す",
+        "Git にコミットし、テストと validate を通してから本番へデプロイする",
+        "本番に直接デプロイしてから、テストを実行する",
+        "ジョブを手作業で作り、後から設定をエクスポートする"
+      ],
+      "answer": [
+        1
+      ],
+      "explanation": "コードを Git で管理し、テストと `bundle validate` を通してから、ターゲットを指定して本番にデプロイする。本番での直接編集は、コードとの差分が生まれ、再現できなくなる。先に本番にデプロイするのは、検証の意味がない。",
+      "note_ref": "要点メモ「Implementing CI/CD」"
+    },
+    {
+      "id": "b008",
+      "domain": "Implementing CI/CD",
+      "question": "デプロイした本番のジョブを、スケジュールを待たずに今すぐ1回実行したい。使うコマンドはどれか。",
+      "options": [
+        "databricks bundle start job_name -t prod",
+        "databricks bundle execute job_name -t prod",
+        "databricks bundle trigger job_name -t prod",
+        "databricks bundle run job_name -t prod"
+      ],
+      "answer": [
+        3
+      ],
+      "explanation": "`databricks bundle run` は、バンドルで定義したジョブやパイプラインを指定して実行する。`start`、`execute`、`trigger` は、この用途の標準的なサブコマンドではない。",
+      "note_ref": "要点メモ「Implementing CI/CD」"
+    },
+    {
+      "id": "b009",
+      "domain": "Implementing CI/CD",
+      "question": "バンドルでデプロイした開発環境のリソースを、まとめて削除したい。使うコマンドはどれか。",
+      "options": [
+        "databricks bundle remove -t dev",
+        "databricks bundle clean -t dev",
+        "databricks bundle destroy -t dev",
+        "databricks bundle delete -t dev"
+      ],
+      "answer": [
+        2
+      ],
+      "explanation": "`databricks bundle destroy` は、バンドルでデプロイしたリソースを削除する。バンドルの管理対象として記録されたリソースが対象になる。`remove`、`clean`、`delete` は、この用途の標準的なサブコマンドではない。",
+      "note_ref": "要点メモ「Implementing CI/CD」"
+    },
+    {
+      "id": "b010",
+      "domain": "Implementing CI/CD",
+      "question": "dev と prod で、クラスタのサイズなど一部の値だけを変えたい。設定を重複させずに管理する方法はどれか。",
+      "options": [
+        "同じ値を dev と prod の両方に毎回書く",
+        "`variables` で変数を定義し、ターゲットごとに必要な値だけを上書きする",
+        "ターゲットごとに `databricks.yml` を別ファイルにコピーする",
+        "クラスタのサイズは実行時の環境変数だけで決める"
+      ],
+      "answer": [
+        1
+      ],
+      "explanation": "`variables` で値を一か所に定義し、`targets` の中で必要な値だけを上書きすると、設定の重複が減る。別ファイルにコピーすると、変更の反映漏れが起きやすい。環境変数だけで決めると、バンドルの設定として管理できない。",
+      "note_ref": "要点メモ「Implementing CI/CD」"
+    }
+  ]
+}

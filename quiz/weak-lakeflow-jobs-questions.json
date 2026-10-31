@@ -1,0 +1,171 @@
+{
+  "meta": {
+    "title": "弱点対策: Working with Lakeflow Jobs(10問)",
+    "exam": "Databricks Certified Data Engineer Associate(弱点分野の練習)",
+    "passing_score": 0.7,
+    "time_limit_minutes": 15,
+    "storage_key": "dea-weak-lakeflow-jobs"
+  },
+  "questions": [
+    {
+      "id": "c001",
+      "domain": "Working with Lakeflow Jobs",
+      "question": "ジョブの中で、タスク B をタスク A が成功した後に実行したい。どう設定するか。",
+      "options": [
+        "タスク B の `depends_on` にタスク A を指定する",
+        "タスク A の開始時刻を遅らせて、B が後で動くようにする",
+        "2つのタスクを同じノートブックにまとめる",
+        "タスク B にだけスケジュールを設定する"
+      ],
+      "answer": [
+        0
+      ],
+      "explanation": "タスクの依存関係は `depends_on` で定義する。依存先が成功した後に、次のタスクが実行される。時刻をずらすだけでは順序は保証されない。ノートブックをまとめる必要はない。タスクごとのスケジュールは、タスクどうしの順序を制御しない。",
+      "note_ref": "要点メモ「Working with Lakeflow Jobs」"
+    },
+    {
+      "id": "c002",
+      "domain": "Working with Lakeflow Jobs",
+      "question": "タスクが一時的な原因で失敗することがある。失敗したときに自動で再試行させたい。設定項目はどれか。",
+      "options": [
+        "max_retries",
+        "max_attempts_on_fail",
+        "retry_forever",
+        "auto_restart"
+      ],
+      "answer": [
+        0
+      ],
+      "explanation": "`max_retries` で再試行の回数を指定する。`min_retry_interval_millis` と組み合わせると、再試行の間隔も指定できる。その他の名前は、Jobs の設定項目としては使わない。",
+      "note_ref": "要点メモ「Working with Lakeflow Jobs」"
+    },
+    {
+      "id": "c003",
+      "domain": "Working with Lakeflow Jobs",
+      "question": "ジョブ専用の一時的なクラスタで実行し、ジョブが終わったら自動で終了させたい。最も適した方法はどれか。",
+      "options": [
+        "全員が共有する All-purpose クラスタに接続する",
+        "ノートブックをクラスタに手動でアタッチして、実行する",
+        "ローカルの PC で Python スクリプトを実行する",
+        "ジョブ専用の Job クラスタを設定する"
+      ],
+      "answer": [
+        3
+      ],
+      "explanation": "Job クラスタは、ジョブの実行時に作られ、完了後に終了する。共有の All-purpose クラスタは他の作業と取り合いになり、コストも管理しにくい。手動でアタッチすると、終了は自分で管理する必要がある。ローカル実行はジョブの管理対象にならない。",
+      "note_ref": "要点メモ「Working with Lakeflow Jobs」"
+    },
+    {
+      "id": "c004",
+      "domain": "Working with Lakeflow Jobs",
+      "question": "ジョブに実行日を渡し、ノートブック内でその値を読み取りたい。最も適した方法はどれか。",
+      "options": [
+        "ノートブックの先頭で、日付を固定の文字列に書き換える",
+        "実行のたびに、人が日付を入力する",
+        "ジョブのパラメータとして定義し、widgets で読み取る",
+        "実行日をテーブル名に含めて、毎回別のテーブルを作る"
+      ],
+      "answer": [
+        2
+      ],
+      "explanation": "ジョブのパラメータを定義すると、ノートブックの widgets を通して値を受け取れる。コードを書き換える方法は、実行のたびに手直しが必要になる。人が入力する方法は自動化できない。テーブル名に実行日を含めると、テーブルが増え続ける。",
+      "note_ref": "要点メモ「Working with Lakeflow Jobs」"
+    },
+    {
+      "id": "c005",
+      "domain": "Working with Lakeflow Jobs",
+      "question": "タスク A で計算した件数を、後続のタスク B で使いたい。タスク間で値を受け渡す仕組みはどれか。",
+      "options": [
+        "task values(taskValues.set と get)",
+        "グローバル一時ビューを作成して、後続のタスクから参照する",
+        "Python の変数をタスク間で共有する設定を有効にする",
+        "チェックポイントのファイルに値を書き込んで、後から読む"
+      ],
+      "answer": [
+        0
+      ],
+      "explanation": "`taskValues.set` で値を設定し、後続のタスクで `taskValues.get` を使って読み取る。タスクは別々に実行されるため、Python の変数は共有されない。グローバル一時ビューはデータを参照する仕組みで、単一の値を渡す用途には向かない。チェックポイントはストリームの進捗を保存するためのもの。",
+      "note_ref": "要点メモ「Working with Lakeflow Jobs」"
+    },
+    {
+      "id": "c006",
+      "domain": "Working with Lakeflow Jobs",
+      "question": "前のタスクの結果が条件を満たすときだけ、後続のタスクを実行したい。使うタスク種類はどれか。",
+      "options": [
+        "If/else condition",
+        "For each",
+        "Python wheel",
+        "Run job"
+      ],
+      "answer": [
+        0
+      ],
+      "explanation": "If/else condition タスクは、条件式の結果によって後続の経路を分岐させる。For each は、リストの要素ごとに同じタスクを繰り返す。Python wheel は、パッケージの関数を実行する。Run job は、別のジョブを呼び出す。",
+      "note_ref": "要点メモ「Working with Lakeflow Jobs」"
+    },
+    {
+      "id": "c007",
+      "domain": "Working with Lakeflow Jobs",
+      "question": "複数タスクのジョブで、タスク C だけが失敗した。成功済みのタスク A と B はやり直さずに、C 以降を再実行したい。使う機能はどれか。",
+      "options": [
+        "Clone job",
+        "Repair run",
+        "Pause schedule",
+        "Delete run"
+      ],
+      "answer": [
+        1
+      ],
+      "explanation": "Repair run は、失敗したタスクとその後続だけを再実行し、成功済みのタスクの結果は再利用する。Clone job は、ジョブの設定を複製する。Pause schedule は、スケジュールを止める。Delete run は、実行履歴を削除する。",
+      "note_ref": "要点メモ「Working with Lakeflow Jobs」"
+    },
+    {
+      "id": "c008",
+      "domain": "Working with Lakeflow Jobs",
+      "question": "外部ロケーションに新しいファイルが届いたら、ジョブを自動で実行したい。使うトリガーはどれか。",
+      "options": [
+        "Manual",
+        "Scheduled(cron)",
+        "File arrival",
+        "Continuous"
+      ],
+      "answer": [
+        2
+      ],
+      "explanation": "File arrival トリガーは、指定した場所に新しいファイルが届いたときにジョブを起動する。Scheduled は決まった時刻に起動する。Manual は手動で実行する。Continuous は、ジョブを常に動かし続ける設定で、ファイルの到着を待つ用途とは異なる。",
+      "note_ref": "要点メモ「Working with Lakeflow Jobs」"
+    },
+    {
+      "id": "c009",
+      "domain": "Working with Lakeflow Jobs",
+      "question": "ジョブが失敗したら、担当者にメールで知らせたい。設定する場所はどこか。",
+      "options": [
+        "ワークスペースのユーザー設定で、表示言語を英語に変更する",
+        "ノートブックに、失敗時にメールを送る通知用のコードを書く",
+        "クラスタの環境変数に、担当者のメールアドレスを登録する",
+        "ジョブの通知(notifications)設定で、失敗時の宛先を指定する"
+      ],
+      "answer": [
+        3
+      ],
+      "explanation": "ジョブ単位の通知設定では、開始・成功・失敗などのイベントごとに宛先を指定できる。ノートブックに通知コードを書くと、タスクの失敗時に動かないおそれがあり、保守も難しい。表示言語は通知とは関係ない。",
+      "note_ref": "要点メモ「Working with Lakeflow Jobs」"
+    },
+    {
+      "id": "c010",
+      "domain": "Working with Lakeflow Jobs",
+      "question": "あるジョブの中から、別のジョブを呼び出して実行したい。使うタスク種類はどれか。",
+      "options": [
+        "REST API call",
+        "Run job",
+        "SQL query",
+        "Notebook"
+      ],
+      "answer": [
+        1
+      ],
+      "explanation": "Run job タスクは、既存のジョブを、そのジョブの設定のまま呼び出す。REST API call は Jobs のタスク種類ではない。API は外部から呼び出す手段であり、ジョブの中のタスクとしては使わない。SQL query と Notebook は、それぞれ SQL やノートブックを実行するタスク。",
+      "note_ref": "要点メモ「Working with Lakeflow Jobs」"
+    }
+  ]
+}
