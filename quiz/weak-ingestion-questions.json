@@ -1,0 +1,151 @@
+{
+  "meta": {
+    "title": "弱点対策: Data Ingestion and Loading(10問)",
+    "exam": "Databricks Certified Data Engineer Associate(弱点分野の練習)",
+    "passing_score": 0.7,
+    "time_limit_minutes": 15,
+    "storage_key": "dea-weak-ingestion"
+  },
+  "questions": [
+    {
+      "id": "a001",
+      "domain": "Data Ingestion and Loading",
+      "question": "クラウドストレージに毎日新しい JSON ファイルが追加される。新しいファイルだけを増分で取り込みたい。最も適した方法はどれか。",
+      "options": [
+        "毎回 `spark.read.json` で全ファイルを読み込み、テーブルを上書きする",
+        "Auto Loader(`cloudFiles`)を `readStream` で使う",
+        "外部 DB に JDBC で接続して全件を取得する",
+        "ノートブックで手作業でファイルを一覧し、1つずつ読み込む"
+      ],
+      "answer": [1],
+      "explanation": "Auto Loader は、ストレージに到着した新しいファイルを検知し、処理済みのファイルを記録しながら増分で取り込む。`spark.read.json` で毎回全件を読むと増分処理にならず、処理時間も増える。JDBC は外部 DB 向けで、ファイルの増分取り込みには使わない。手作業の読み込みは再現性がなく、運用に向かない。",
+      "note_ref": "要点メモ「Data Ingestion and Loading」"
+    },
+    {
+      "id": "a002",
+      "domain": "Data Ingestion and Loading",
+      "question": "`COPY INTO` を同じ入力パスとテーブルに対して毎晩再実行した。どうなるか。",
+      "options": [
+        "すべてのファイルを再度読み込み、行が重複する",
+        "テーブルが自動で TRUNCATE されてから全件を読み込む",
+        "すでに読み込まれたファイルはスキップされ、新しいファイルだけが取り込まれる",
+        "2回目以降の実行は必ずエラーで失敗する"
+      ],
+      "answer": [2],
+      "explanation": "`COPY INTO` は、どのファイルを読み込んだかを記録しているため、再実行しても既存のファイルは取り込まない(冪等)。すべて再読み込みすると重複行が生まれるため、それは誤り。TRUNCATE は行われない。2回目以降も正常に動くため、必ず失敗するという説明も誤り。",
+      "note_ref": "要点メモ「Data Ingestion and Loading」"
+    },
+    {
+      "id": "a003",
+      "domain": "Data Ingestion and Loading",
+      "question": "Auto Loader で `cloudFiles.schemaLocation` を指定する目的として正しいものはどれか。",
+      "options": [
+        "推論されたスキーマと、その更新内容を保存する",
+        "処理済みファイルの一覧を保存する",
+        "書き込み先テーブルの保存場所を指定する",
+        "一時ファイルを置くためのフォルダを指定する"
+      ],
+      "answer": [0],
+      "explanation": "`schemaLocation` には、Auto Loader が推論したスキーマと、スキーマ進化で更新された内容が保存される。処理の進捗は `writeStream` の `checkpointLocation` に記録する。出力先テーブルは `toTable` などで指定するもので、`schemaLocation` とは関係ない。一時ファイルの置き場所でもない。",
+      "note_ref": "要点メモ「Data Ingestion and Loading」"
+    },
+    {
+      "id": "a004",
+      "domain": "Data Ingestion and Loading",
+      "question": "`writeStream` の `checkpointLocation` の役割はどれか。",
+      "options": [
+        "読み込むファイルの場所を指定する",
+        "スキーマの変更を許可するかどうかを決める",
+        "データを重複排除するキーを指定する",
+        "処理の進捗と状態を保存し、失敗後に続きから再開できるようにする"
+      ],
+      "answer": [3],
+      "explanation": "チェックポイントには、どこまで処理したかと集約などの状態が保存される。そのため、ストリームが失敗しても、保存された地点から再開できる。読み込み先は `load` のパスで指定する。スキーマ進化は `schemaEvolutionMode` で制御する。重複排除のキーはクエリ側で指定する。",
+      "note_ref": "要点メモ「Data Ingestion and Loading」"
+    },
+    {
+      "id": "a005",
+      "domain": "Data Ingestion and Loading",
+      "question": "`cloudFiles.inferColumnTypes` を指定しない場合、JSON の数値の列はどの型として扱われるか。",
+      "options": [
+        "整数型(BIGINT)",
+        "文字列型(STRING)",
+        "倍精度浮動小数点型(DOUBLE)",
+        "ファイルごとに自動で判定される型"
+      ],
+      "answer": [1],
+      "explanation": "既定では、推論されたスキーマの列は文字列として扱われる。数値・真偽値・タイムスタンプとして推論させるには `inferColumnTypes` を `true` にする。数値型に固定されるわけではなく、ファイルごとに型が変わることもない。",
+      "note_ref": "要点メモ「Data Ingestion and Loading」"
+    },
+    {
+      "id": "a006",
+      "domain": "Data Ingestion and Loading",
+      "question": "`cloudFiles.schemaEvolutionMode` を `rescue` にした。スキーマにない列の値はどこに入るか。",
+      "options": [
+        "取り込みが失敗し、そのファイルは処理されない",
+        "テーブルのスキーマに自動で列が追加される",
+        "`_rescued_data` 列に JSON 形式で退避される",
+        "破棄され、どこにも残らない"
+      ],
+      "answer": [2],
+      "explanation": "`rescue` モードでは、スキーマにない列や、スキーマと型が合わない値を `_rescued_data` 列に退避する。スキーマは変わらず、ストリームも止まらない。列が自動で追加されるのは `addNewColumns` の動作。何も残さないのは `none` モードの動作。",
+      "note_ref": "要点メモ「Data Ingestion and Loading」"
+    },
+    {
+      "id": "a007",
+      "domain": "Data Ingestion and Loading",
+      "question": "Auto Loader で、スキーマ推論を使わずに列と型を明示して読み込みたい。最も適した方法はどれか。",
+      "options": [
+        "`.schema()` で列と型を明示的に指定する",
+        "スキーマを毎回 `DESCRIBE` で取得して、ノートブックに貼り付ける",
+        "`cloudFiles.schemaLocation` を削除する",
+        "チェックポイントを削除して、スキーマを再度推論させる"
+      ],
+      "answer": [0],
+      "explanation": "`.schema()` で列と型を指定すると、推論を行わずにその定義で読み込める。`DESCRIBE` はテーブルの情報を表示するもので、ファイルの読み込み定義ではない。`schemaLocation` を削除しても型は固定されない。チェックポイントを削除すると進捗が失われ、最初から処理し直すことになる。",
+      "note_ref": "要点メモ「Data Ingestion and Loading」"
+    },
+    {
+      "id": "a008",
+      "domain": "Data Ingestion and Loading",
+      "question": "外部の PostgreSQL に JDBC で接続する。パスワードをノートブックに平文で書かずに済ませたい。最も適した方法はどれか。",
+      "options": [
+        "パスワードを `print` して、結果を別のセルにコピーする",
+        "パスワードをノートブックのコメントに書いて、共有を制限する",
+        "ワークスペースの共有フォルダに `.txt` で保存して読み込む",
+        "`dbutils.secrets.get()` で Secret スコープから取得する"
+      ],
+      "answer": [3],
+      "explanation": "Secret スコープに認証情報を保存し、`dbutils.secrets.get()` で実行時に取得すると、コードに値が残らない。`print` で表示したり、コメントや共有フォルダに置いたりすると、漏えいの原因になる。",
+      "note_ref": "要点メモ「Data Ingestion and Loading」"
+    },
+    {
+      "id": "a009",
+      "domain": "Data Ingestion and Loading",
+      "question": "毎日の増分データを既存のテーブルに追加したい。既存の行は消したくない。`df.write` で指定するモードはどれか。",
+      "options": [
+        "overwrite",
+        "append",
+        "ignore",
+        "errorifexists"
+      ],
+      "answer": [1],
+      "explanation": "`append` は既存の行を残したまま、新しい行を追加する。`overwrite` は既存の行を置き換えるため、過去のデータが消える。`ignore` は、テーブルが存在すると何もせずに終わる。`errorifexists` は、テーブルが存在するとエラーになる。",
+      "note_ref": "要点メモ「Data Ingestion and Loading」"
+    },
+    {
+      "id": "a010",
+      "domain": "Data Ingestion and Loading",
+      "question": "`CREATE TABLE ... AS SELECT`(CTAS)の説明として正しいものはどれか。",
+      "options": [
+        "既存のテーブルの定義だけを複製し、データはコピーしない",
+        "テーブルを作成するだけで、データは後から別の文で追加する",
+        "クエリの結果からスキーマとデータを作成し、テーブルを新規作成する",
+        "既存テーブルの行をすべて削除してから、クエリの結果を入れる"
+      ],
+      "answer": [2],
+      "explanation": "CTAS は、SELECT の結果からスキーマを決めてテーブルを作り、データも同時に書き込む。定義だけを複製するのは `CREATE TABLE ... LIKE` の動作。テーブル作成とデータ追加を別の文で行うわけではない。既存テーブルを置き換えるのは `CREATE OR REPLACE TABLE` などの別の操作。",
+      "note_ref": "要点メモ「Data Ingestion and Loading」"
+    }
+  ]
+}
